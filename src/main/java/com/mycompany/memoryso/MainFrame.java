@@ -4,6 +4,12 @@
  */
 package com.mycompany.memoryso;
 
+import Classes.Planner;
+import com.sun.tools.javac.Main;
+import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author danie
@@ -16,6 +22,50 @@ public class MainFrame extends javax.swing.JFrame {
     public MainFrame() {
         initComponents();
     }
+    
+    public class PlannerThread extends Thread {
+        
+        @Override
+        public void run() {
+            
+            planner.roundRobbin();
+        }
+    }
+
+    public class Reloj extends Thread {
+
+        Calendar calendario;
+
+        @Override
+        public void run() {
+            while (true) {
+                String horaSistema = "";
+                calendario = Calendar.getInstance();
+                if (calendario.get(Calendar.HOUR_OF_DAY) < 10) {
+                    horaSistema += String.valueOf("0" + calendario.get(Calendar.HOUR_OF_DAY)) + ":";
+                } else {
+                    horaSistema += String.valueOf(calendario.get(Calendar.HOUR_OF_DAY)) + ":";
+                }
+                if (calendario.get(Calendar.MINUTE) < 10) {
+                    horaSistema += String.valueOf("0" + calendario.get(Calendar.MINUTE)) + ":";
+                } else {
+                    horaSistema += String.valueOf(calendario.get(Calendar.MINUTE)) + ":";
+                }
+                if (calendario.get(Calendar.SECOND) < 10) {
+                    horaSistema += String.valueOf("0" + calendario.get(Calendar.SECOND)) + ":";
+                } else {
+                    horaSistema += String.valueOf(calendario.get(Calendar.SECOND)) + ":";
+                }
+                horaSistema += String.valueOf(calendario.get(Calendar.MILLISECOND)) + " hrs";
+                lblHoraSistema.setText(horaSistema);
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
