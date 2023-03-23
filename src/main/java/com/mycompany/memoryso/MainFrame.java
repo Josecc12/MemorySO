@@ -23,6 +23,94 @@ public class MainFrame extends javax.swing.JFrame {
         initComponents();
     }
     
+    public class memoryInterface extends Thread{
+     @Override
+     public void run(){
+         while(true){
+             
+             try {
+                 if(planner!=null && memoryDrawed && planner.getCurrentProcess()!=null){
+                     fillMemory();
+                 }
+                 Thread.sleep(10);
+             } catch (InterruptedException ex) {
+                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+             }
+         }
+     }
+    }
+
+    public class cpuInterface extends Thread {
+
+        @Override
+        public void run() {
+
+            while (true) {
+                
+                
+
+                if (planner != null && planner.getCurrentProcess() != null) {
+                   
+                    lblCurrentProcess.setText(planner.getCurrentProcess().getId());
+                    lblBase.setText(planner.getCurrentProcess().getBase());
+                    lblLimit.setText(planner.getCurrentProcess().getLimit());
+
+                }
+                if (planner != null && planner.getProcessList().isEmpty()) {
+                    if (planner.getCurrentProcess() == null || planner.getCurrentProcess().getIntakeTime() <= 0) {
+                        lblCurrentProcess.setText("Terminado");
+                    }
+                }
+
+                model.setRowCount(0);
+                if (planner != null) {
+
+                    Object[] fila1 = new Object[5];
+                    if (planner.getCurrentProcess() != null) {
+                        fila1[0] = planner.getCurrentProcess().getId();
+                        fila1[1] = planner.getCurrentProcess().getStatus();
+                        fila1[2] = planner.getCurrentProcess().getIntakeTime();
+                        fila1[3] = planner.getCurrentProcess().getStartTime();
+                        model.addRow(fila1);
+                    }
+                    for (Classes.Process process : planner.getProcessList()) {
+
+                        fila1[0] = process.getId();
+                        fila1[1] = process.getStatus();
+                        fila1[2] = process.getIntakeTime();
+                        fila1[3] = process.getStartTime();
+                        model.addRow(fila1);
+                    }
+
+                    if (planner.getProcessList().isEmpty() && planner.getCurrentProcess() == null) {
+
+                        for (Classes.Process process : planner.getFinishedProcess()) {
+
+                            fila1[0] = process.getId();
+                            fila1[1] = process.getStatus();
+                            fila1[2] = process.getIntakeTime();
+                            fila1[3] = process.getStartTime();
+                            fila1[4] = process.getEndTime();
+                            model.addRow(fila1);
+                        }
+
+                    }
+                    
+                    
+
+                }
+                
+                
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+    
     public class PlannerThread extends Thread {
         
         @Override
