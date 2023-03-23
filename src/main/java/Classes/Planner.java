@@ -108,6 +108,7 @@ public class Planner {
                     Thread.sleep(1000);
                     if(this.currentProcess.getIntakeTime()>0){
                         this.currentProcess.setIntakeTime(currentProcess.getIntakeTime() - 1);
+                        this.currentProcess.setProgrammCount(this.currentProcess.getProgrammCount()+10);
                     }
                     else{
                         break;

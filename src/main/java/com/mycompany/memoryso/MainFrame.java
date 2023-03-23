@@ -6,9 +6,19 @@ package com.mycompany.memoryso;
 
 import Classes.Planner;
 import com.sun.tools.javac.Main;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -16,28 +26,49 @@ import java.util.logging.Logger;
  */
 public class MainFrame extends javax.swing.JFrame {
 
+    Reloj horaActual = new Reloj(); // hilo que muestra la hora del sistema
+    List<Classes.Process> processList = new ArrayList<Classes.Process>();
+    Planner planner = null;
+    PlannerThread plannerThread = new PlannerThread();
+    cpuInterface cpu = new cpuInterface();
+    memoryInterface memory = new memoryInterface();
+    DefaultTableModel model;
+    boolean memoryDrawed = false;
+    int maxMemory;
+
     /**
      * Creates new form MainFrame
      */
     public MainFrame() {
         initComponents();
+        this.maxMemory = 45;
+        horaActual.start();
+        cpu.start();
+        memory.start();
+        model = (DefaultTableModel) jTable1.getModel();
+        this.lblMemory.setBorder(BorderFactory.createLineBorder(Color.RED, 5));
+        this.lblSO.setBorder(BorderFactory.createLineBorder(Color.RED, 5));
+        this.lblSO.setOpaque(true);
+        this.lblSO.setBackground(Color.CYAN);
+
     }
-    
-    public class memoryInterface extends Thread{
-     @Override
-     public void run(){
-         while(true){
-             
-             try {
-                 if(planner!=null && memoryDrawed && planner.getCurrentProcess()!=null){
-                     fillMemory();
-                 }
-                 Thread.sleep(10);
-             } catch (InterruptedException ex) {
-                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-             }
-         }
-     }
+
+    public class memoryInterface extends Thread {
+
+        @Override
+        public void run() {
+            while (true) {
+
+                try {
+                    if (planner != null && memoryDrawed && planner.getCurrentProcess() != null) {
+                        fillMemory();
+                    }
+                    Thread.sleep(10);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 
     public class cpuInterface extends Thread {
@@ -46,14 +77,13 @@ public class MainFrame extends javax.swing.JFrame {
         public void run() {
 
             while (true) {
-                
-                
 
                 if (planner != null && planner.getCurrentProcess() != null) {
-                   
+
                     lblCurrentProcess.setText(planner.getCurrentProcess().getId());
                     lblBase.setText(planner.getCurrentProcess().getBase());
                     lblLimit.setText(planner.getCurrentProcess().getLimit());
+                    lbld.setText(String.valueOf(planner.getCurrentProcess().getProgrammCount()));
 
                 }
                 if (planner != null && planner.getProcessList().isEmpty()) {
@@ -95,27 +125,23 @@ public class MainFrame extends javax.swing.JFrame {
                         }
 
                     }
-                    
-                    
 
                 }
-                
-                
 
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
     }
-    
+
     public class PlannerThread extends Thread {
-        
+
         @Override
         public void run() {
-            
+
             planner.roundRobbin();
         }
     }
@@ -152,8 +178,78 @@ public class MainFrame extends javax.swing.JFrame {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-        }
-    }
+
+        }
+    }
+
+    public void drawMemory(List<Classes.Process> list) {
+
+        this.lblMemory.removeAll();
+        lblMemory.revalidate();
+        lblMemory.repaint();
+        //Collections.sort(list);
+        int posY = 5;
+        for (int i = 0; i < list.size(); i++) {
+            System.out.println("Draw");
+            JLabel temp = new JLabel("Process " + list.get(i).getId());
+            temp.setVerticalAlignment(SwingConstants.CENTER);
+            temp.setHorizontalAlignment(SwingConstants.CENTER);
+            temp.setBounds(5, posY, 190, 10 * list.get(i).getIntakeTime());
+            posY = 10 * list.get(i).getIntakeTime() + posY + 1;
+            Border border = BorderFactory.createLineBorder(Color.BLACK, 1);
+            temp.setBorder(border);
+            processList.get(i).setBase(String.valueOf(temp.getBounds().y));
+            processList.get(i).setLimit(String.valueOf(temp.getBounds().y + temp.getBounds().height));
+            processList.get(i).setProgrammCount(Integer.valueOf(processList.get(i).getBase()));
+            temp.setName(list.get(i).getId());
+
+            this.lblMemory.add(temp);
+            this.lblMemory.setText("");
+
+        }
+        memoryDrawed = true;
+
+    }
+
+    public void fillMemory() {
+
+        for (Component componente : this.lblMemory.getComponents()) {
+            // Verifica si el componente es un JLabel
+            if (componente instanceof JLabel) {
+
+                if (componente.getName().equals(planner.getCurrentProcess().getId())) {
+
+                    if (((JLabel) componente).getComponentCount() == 0) {
+
+                        JLabel temp2 = new JLabel("Process: " + componente.getName());
+                        temp2.setVerticalAlignment(SwingConstants.CENTER);
+                        temp2.setHorizontalAlignment(SwingConstants.CENTER);
+                        int height = (componente.getSize().height / 10) - planner.getCurrentProcess().getIntakeTime();
+                        temp2.setBounds(0, 0, 200, 10 * (height));
+                        Border border2 = BorderFactory.createLineBorder(Color.GREEN, 1);
+                        temp2.setBorder(border2);
+                        temp2.setOpaque(true);
+                        temp2.setBackground(Color.GREEN);
+                        ((JLabel) componente).add(temp2);
+                        ((JLabel) componente).setText("");
+                    } else {
+
+                        int height = (componente.getSize().height / 10) - planner.getCurrentProcess().getIntakeTime();
+
+                        height = (height + 1) * 10;
+
+                        Dimension dm = new Dimension(200, height);
+
+                        ((JLabel) componente).getComponent(0).setSize(dm);
+                        componente.revalidate();
+                        componente.repaint();
+
+                    }
+
+                }
+            }
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -168,7 +264,7 @@ public class MainFrame extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         lblCurrentProcess3 = new javax.swing.JLabel();
         txtIntakeTime = new javax.swing.JTextField();
-        lblCurrentProcess4 = new javax.swing.JLabel();
+        lbld = new javax.swing.JLabel();
         jButton2 = new javax.swing.JButton();
         lblBase = new javax.swing.JLabel();
         jButton3 = new javax.swing.JButton();
@@ -200,9 +296,9 @@ public class MainFrame extends javax.swing.JFrame {
         lblCurrentProcess3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblCurrentProcess3.setText("Limit");
 
-        lblCurrentProcess4.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblCurrentProcess4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblCurrentProcess4.setText("d");
+        lbld.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lbld.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lbld.setText("d");
 
         jButton2.setText("Cargar");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
@@ -303,7 +399,7 @@ public class MainFrame extends javax.swing.JFrame {
                                     .addGroup(layout.createSequentialGroup()
                                         .addComponent(lblProgrammCounter, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGap(18, 18, 18)
-                                        .addComponent(lblCurrentProcess4, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(lbld, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
                                             .addComponent(lblCurrentProcess3, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -375,7 +471,7 @@ public class MainFrame extends javax.swing.JFrame {
                         .addComponent(lblCurrentProcess)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(lblCurrentProcess4)
+                            .addComponent(lbld)
                             .addComponent(lblProgrammCounter))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -396,15 +492,34 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-
+        String name = txtName.getText();
+        int arrivalTime = Integer.valueOf(txtArrivalTime.getText());
+        int intakeTime = Integer.valueOf(txtIntakeTime.getText());
+        if (maxMemory - intakeTime >= 0) {
+            processList.add(new Classes.Process(name, arrivalTime, intakeTime));
+            drawMemory(processList);
+            txtName.setText("");
+            txtIntakeTime.setText("");
+            txtArrivalTime.setText("");
+            maxMemory = maxMemory - intakeTime;
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-
+          // TODO add your handling code here:
+        processList.clear();
+        drawMemory(processList);
+        this.maxMemory =0;
+        
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        drawMemory(processList);
 
+        planner = new Planner(processList, 5);
+
+        plannerThread = new PlannerThread();
+        plannerThread.start();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed
@@ -460,12 +575,12 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblCurrentProcess;
     private javax.swing.JLabel lblCurrentProcess2;
     private javax.swing.JLabel lblCurrentProcess3;
-    private javax.swing.JLabel lblCurrentProcess4;
     private javax.swing.JLabel lblHoraSistema;
     private javax.swing.JLabel lblLimit;
     private javax.swing.JLabel lblMemory;
     private javax.swing.JLabel lblProgrammCounter;
     private javax.swing.JLabel lblSO;
+    private javax.swing.JLabel lbld;
     private javax.swing.JTextField txtArrivalTime;
     private javax.swing.JTextField txtIntakeTime;
     private javax.swing.JTextField txtName;
