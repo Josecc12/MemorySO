@@ -97,13 +97,17 @@ public class Planner {
     public void roundRobbin() {
         while (currentProcess != null) {
             try {
+                //Si es su primera vez de ejecucion inia el tiempo
                 if (currentProcess.getStartTime() == null) {
                     currentProcess.setStartTime(getTime());
                 }
+                
+                //Ejecuta el proceso como Current Process
                 this.currentProcess.setStatus("Executing");
                 processList.remove(this.currentProcess);
                 System.out.println("CurrenteProcess:" + this.currentProcess);
 
+                //Reduce el tiempo de consumo y aumenta el contador del programa en 10
                 for (int i = 0; i < quantum; i++) {
                     Thread.sleep(1000);
                     if(this.currentProcess.getIntakeTime()>0){
@@ -118,15 +122,21 @@ public class Planner {
 
                 showProcessList();
                 System.out.println("");
+                
+                //Si el tiempo de consumo es >0 lo vuelve a poner en la lista de procesos para ejecutarse
                 if (this.currentProcess.getIntakeTime() > 0) {
                     currentProcess.setStatus("Ready");
                     processList.add(currentProcess);
-                } else {
+                } 
+                //Si no lo pone en la  lista de terminados
+                else {
                     currentProcess.setStatus("Finished");
                     currentProcess.setIntakeTime(0);
                     currentProcess.setEndTime(getTime());
                     this.finishedProcess.add(currentProcess);
                 }
+                
+                //Pasa al siguiente proceso de la lista hasta que sea null
                 this.currentProcess = !processList.isEmpty() ? processList.get(0) : null;
 
             } catch (InterruptedException ex) {

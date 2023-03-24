@@ -27,14 +27,14 @@ import javax.swing.table.DefaultTableModel;
 public class MainFrame extends javax.swing.JFrame {
 
     Reloj horaActual = new Reloj(); // hilo que muestra la hora del sistema
-    List<Classes.Process> processList = new ArrayList<Classes.Process>();
-    Planner planner = null;
-    PlannerThread plannerThread = new PlannerThread();
-    cpuInterface cpu = new cpuInterface();
-    memoryInterface memory = new memoryInterface();
+    List<Classes.Process> processList = new ArrayList<Classes.Process>(); // Lista de procesos a ejecutar
+    Planner planner = null; //Planificador RR
+    PlannerThread plannerThread = new PlannerThread(); //Hilo de planificador
+    cpuInterface cpu = new cpuInterface(); //Hilo para las graficas de la cpu
+    memoryInterface memory = new memoryInterface(); //Hilo para las graficas de la memoria
     DefaultTableModel model;
     boolean memoryDrawed = false;
-    int maxMemory;
+    int maxMemory; //Maximos de memoria=45 seg
 
     /**
      * Creates new form MainFrame
@@ -77,9 +77,11 @@ public class MainFrame extends javax.swing.JFrame {
         public void run() {
 
             while (true) {
-
+                
+                //Mientras el exista un proceso Actual ejectua la cpu Interface 
                 if (planner != null && planner.getCurrentProcess() != null) {
 
+                    //Pone los lbl del proceso actual
                     lblCurrentProcess.setText(planner.getCurrentProcess().getId());
                     lblBase.setText(planner.getCurrentProcess().getBase());
                     lblLimit.setText(planner.getCurrentProcess().getLimit());
@@ -87,6 +89,7 @@ public class MainFrame extends javax.swing.JFrame {
 
                 }
                 if (planner != null && planner.getProcessList().isEmpty()) {
+                    //Si todos los proceso terminaron pone la cpu en Terminado
                     if (planner.getCurrentProcess() == null || planner.getCurrentProcess().getIntakeTime() <= 0) {
                         lblCurrentProcess.setText("Terminado");
                     }
@@ -94,7 +97,8 @@ public class MainFrame extends javax.swing.JFrame {
 
                 model.setRowCount(0);
                 if (planner != null) {
-
+                    
+                    //Pone el currentProcess en la tabla[0]
                     Object[] fila1 = new Object[5];
                     if (planner.getCurrentProcess() != null) {
                         fila1[0] = planner.getCurrentProcess().getId();
@@ -103,6 +107,8 @@ public class MainFrame extends javax.swing.JFrame {
                         fila1[3] = planner.getCurrentProcess().getStartTime();
                         model.addRow(fila1);
                     }
+                    
+                    //Pone la lista de procesos en la tabla
                     for (Classes.Process process : planner.getProcessList()) {
 
                         fila1[0] = process.getId();
@@ -111,9 +117,11 @@ public class MainFrame extends javax.swing.JFrame {
                         fila1[3] = process.getStartTime();
                         model.addRow(fila1);
                     }
-
+                    
+                    //Si termino todos los procesos
                     if (planner.getProcessList().isEmpty() && planner.getCurrentProcess() == null) {
 
+                        //Recorre todos los procesos terminados y los pone en la tabla
                         for (Classes.Process process : planner.getFinishedProcess()) {
 
                             fila1[0] = process.getId();
@@ -141,7 +149,7 @@ public class MainFrame extends javax.swing.JFrame {
 
         @Override
         public void run() {
-
+            
             planner.roundRobbin();
         }
     }
@@ -184,6 +192,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     public void drawMemory(List<Classes.Process> list) {
 
+        //Limpia la memoria
         this.lblMemory.removeAll();
         lblMemory.revalidate();
         lblMemory.repaint();
@@ -191,18 +200,25 @@ public class MainFrame extends javax.swing.JFrame {
         int posY = 5;
         for (int i = 0; i < list.size(); i++) {
             System.out.println("Draw");
+            
+            //Crea un una Label para 1 Procesos
             JLabel temp = new JLabel("Process " + list.get(i).getId());
             temp.setVerticalAlignment(SwingConstants.CENTER);
             temp.setHorizontalAlignment(SwingConstants.CENTER);
+            
+            // Height es 10px*Tiempo de consumo
             temp.setBounds(5, posY, 190, 10 * list.get(i).getIntakeTime());
             posY = 10 * list.get(i).getIntakeTime() + posY + 1;
             Border border = BorderFactory.createLineBorder(Color.BLACK, 1);
             temp.setBorder(border);
+            
+            //Setea los atributos de heigh y width a los proceso como base y limite
             processList.get(i).setBase(String.valueOf(temp.getBounds().y));
             processList.get(i).setLimit(String.valueOf(temp.getBounds().y + temp.getBounds().height));
             processList.get(i).setProgrammCount(Integer.valueOf(processList.get(i).getBase()));
             temp.setName(list.get(i).getId());
 
+            //Agrega el lbl temporal a el lbl del proceso
             this.lblMemory.add(temp);
             this.lblMemory.setText("");
 
@@ -217,13 +233,17 @@ public class MainFrame extends javax.swing.JFrame {
             // Verifica si el componente es un JLabel
             if (componente instanceof JLabel) {
 
+                //Busca el proceso Actual en la memoria
                 if (componente.getName().equals(planner.getCurrentProcess().getId())) {
 
+                    //Si es la primera vez en pintarlo crea un lbl temporal y lo pinta 
                     if (((JLabel) componente).getComponentCount() == 0) {
 
                         JLabel temp2 = new JLabel("Process: " + componente.getName());
                         temp2.setVerticalAlignment(SwingConstants.CENTER);
                         temp2.setHorizontalAlignment(SwingConstants.CENTER);
+                        
+                        //height = 10 px por segundo faltante
                         int height = (componente.getSize().height / 10) - planner.getCurrentProcess().getIntakeTime();
                         temp2.setBounds(0, 0, 200, 10 * (height));
                         Border border2 = BorderFactory.createLineBorder(Color.GREEN, 1);
@@ -233,13 +253,15 @@ public class MainFrame extends javax.swing.JFrame {
                         ((JLabel) componente).add(temp2);
                         ((JLabel) componente).setText("");
                     } else {
-
+                        
+                        //Si no aumneta el lbl hijo en 10px por cada segundo
                         int height = (componente.getSize().height / 10) - planner.getCurrentProcess().getIntakeTime();
 
                         height = (height + 1) * 10;
 
                         Dimension dm = new Dimension(200, height);
-
+                        
+                        //aumenta el lbl[0] en 10 px
                         ((JLabel) componente).getComponent(0).setSize(dm);
                         componente.revalidate();
                         componente.repaint();
@@ -492,6 +514,7 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        //Crea un nuevo proceso
         String name = txtName.getText();
         int arrivalTime = Integer.valueOf(txtArrivalTime.getText());
         int intakeTime = Integer.valueOf(txtIntakeTime.getText());
@@ -506,7 +529,9 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-          // TODO add your handling code here:
+        
+        // TODO add your handling code here:
+        //Limpia toda la memoria
         processList.clear();
         drawMemory(processList);
         this.maxMemory =0;
@@ -514,8 +539,11 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        
+        //Dibuja la memoria
         drawMemory(processList);
 
+        //Inicia el planificador con 5 de quantum
         planner = new Planner(processList, 5);
 
         plannerThread = new PlannerThread();
