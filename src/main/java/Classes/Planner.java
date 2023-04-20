@@ -22,15 +22,38 @@ public class Planner {
     private List<Process> processList;
     private Process currentProcess;
     private List<Process> finishedProcess;
+    private List<Process> auxList;
+    private int currentTime;
 
     public Planner(List<Process> processList, int quatum) {
+        
         this.quantum = quatum;
         this.processList = processList;
+        //this.processList.add(processList.get(0));
         this.finishedProcess = new ArrayList<Process>();
         Collections.sort(processList);
         this.currentProcess = processList.get(0);
+        currentTime = currentProcess.getArrivalTime();
+        if(currentTime!=0){
+            try {
+                Thread.sleep(currentTime*1000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Planner.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        //processList.remove(0);
 
     }
+
+    public int getCurrentTime() {
+        return currentTime;
+    }
+
+    public void setCurrentTime(int currentTime) {
+        this.currentTime = currentTime;
+    }
+    
+    
 
     public int getQuantum() {
         return quantum;
@@ -94,7 +117,8 @@ public class Planner {
         return horaSistema;
     }
 
-    public void roundRobbin() {
+    public void roundRobbin() 
+    {
         while (currentProcess != null) {
             try {
                 //Si es su primera vez de ejecucion inia el tiempo
@@ -113,6 +137,8 @@ public class Planner {
                     if(this.currentProcess.getIntakeTime()>0){
                         this.currentProcess.setIntakeTime(currentProcess.getIntakeTime() - 1);
                         this.currentProcess.setProgrammCount(this.currentProcess.getProgrammCount()+10);
+                        
+                        this.currentTime++;
                     }
                     else{
                         break;
@@ -137,12 +163,38 @@ public class Planner {
                 }
                 
                 //Pasa al siguiente proceso de la lista hasta que sea null
-                this.currentProcess = !processList.isEmpty() ? processList.get(0) : null;
+                if(!processList.isEmpty()){
+                    
+                    Process aux = processList.get(0);
+                    
+                    if(currentTime>=aux.getArrivalTime()){
+                        //Cambio de Processo
+                        this.currentProcess = aux;
+                        //Conmutador
+                        Thread.sleep(1000);
+                        
+                    }
+                    /*if(currentProcess.getIntakeTime()<=0 && (aux.getArrivalTime()-this.currentTime>=0)){
+                        //Tiempo muerto entre procesos
+                        System.out.println("Tiempo Muerto...");
+                        Thread.sleep((aux.getArrivalTime()-this.currentTime)*1000);
+                        this.currentTime = aux.getArrivalTime();
+                    }*/
+                    
+                }
+                else{
+                    this.currentProcess = null;
+                }
+                //this.currentProcess = !processList.isEmpty() ? processList.get(0) : null;
 
             } catch (InterruptedException ex) {
                 Logger.getLogger(Planner.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    public void setNewProcees(){
+        
     }
 
 }
